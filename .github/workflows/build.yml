@@ -1,4 +1,4 @@
-name: Build VibeGram APK
+ name: Build VibeGram APK
 
 on:
   push:
