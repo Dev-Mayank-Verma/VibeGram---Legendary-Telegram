@@ -31,13 +31,30 @@ jobs:
         working-directory: vibegram
         run: flutter create --platforms=android .
 
+      - name: Add calling permissions to AndroidManifest
+        run: |
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>\n    <uses-permission android:name="android.permission.BLUETOOTH"/>\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>\n</manifest>|' vibegram/android/app/src/main/AndroidManifest.xml
+
+      - name: Add Firebase Google Services plugin
+        run: |
+          sed -i '/dev.flutter.flutter-plugin-loader/a\    id("com.google.gms.google-services") version "4.4.0" apply false' vibegram/android/settings.gradle.kts
+          sed -i '/id("com.android.application")/a\    id("com.google.gms.google-services")' vibegram/android/app/build.gradle.kts
+
+      - name: Add google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" > vibegram/android/app/google-services.json
+
       - name: Install dependencies
         working-directory: vibegram
         run: flutter pub get
 
       - name: Build debug APK
         working-directory: vibegram
-        run: flutter build apk --debug
+        run: |
+          flutter build apk --debug \
+            --dart-define=AGORA_APP_ID=${{ secrets.AGORA_APP_ID }} \
+            --dart-define=AGORA_TOKEN_URL=${{ secrets.AGORA_TOKEN_URL }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
