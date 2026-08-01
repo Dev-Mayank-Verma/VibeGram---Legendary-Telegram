@@ -32,7 +32,15 @@ jobs:
         run: flutter create --platforms=android .
 
       - name: Fix compileSdk for Agora/Firebase compatibility
-        run: sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' vibegram/android/app/build.gradle.kts
+        run: |
+          cat >> vibegram/android/app/build.gradle.kts << 'GRADLE_EOF'
+
+          android {
+              compileSdk = 36
+          }
+          GRADLE_EOF
+          echo "--- build.gradle.kts after patch (for debugging if this ever fails again) ---"
+          cat vibegram/android/app/build.gradle.kts
 
       - name: Add calling permissions to AndroidManifest
         run: |
