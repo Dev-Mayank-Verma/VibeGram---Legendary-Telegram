@@ -31,7 +31,7 @@ jobs:
         working-directory: vibegram
         run: flutter create --platforms=android .
 
-      - name: Fix compileSdk for Agora/Firebase compatibility
+      - name: Fix compileSdk for Agora/Firebase compatibility (app module)
         run: |
           cat >> vibegram/android/app/build.gradle.kts << 'GRADLE_EOF'
 
@@ -39,7 +39,22 @@ jobs:
               compileSdk = 36
           }
           GRADLE_EOF
-          echo "--- build.gradle.kts after patch (for debugging if this ever fails again) ---"
+
+      - name: Fix compileSdk for ALL modules (Agora's own plugin module included)
+        run: |
+          cat >> vibegram/android/build.gradle.kts << 'GRADLE_EOF'
+
+          subprojects {
+              afterEvaluate {
+                  extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.let {
+                      it.compileSdkVersion(36)
+                  }
+              }
+          }
+          GRADLE_EOF
+          echo "--- android/build.gradle.kts (root) after patch ---"
+          cat vibegram/android/build.gradle.kts
+          echo "--- android/app/build.gradle.kts after patch ---"
           cat vibegram/android/app/build.gradle.kts
 
       - name: Add calling permissions to AndroidManifest
