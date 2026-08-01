@@ -45,9 +45,14 @@ jobs:
           cat >> vibegram/android/build.gradle.kts << 'GRADLE_EOF'
 
           subprojects {
-              afterEvaluate {
-                  extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.let {
-                      it.compileSdkVersion(36)
+              plugins.withId("com.android.application") {
+                  extensions.configure<com.android.build.gradle.BaseExtension> {
+                      compileSdkVersion(36)
+                  }
+              }
+              plugins.withId("com.android.library") {
+                  extensions.configure<com.android.build.gradle.BaseExtension> {
+                      compileSdkVersion(36)
                   }
               }
           }
