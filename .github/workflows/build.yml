@@ -38,6 +38,10 @@ jobs:
           android {
               compileSdk = 36
           }
+
+          configurations.all {
+              exclude(group = "io.agora.rtc", module = "agora-special-full")
+          }
           GRADLE_EOF
 
       - name: Fix compileSdk for ALL modules (Agora's own plugin module included)
