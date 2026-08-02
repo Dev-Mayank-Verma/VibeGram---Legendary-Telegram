@@ -76,6 +76,47 @@ jobs:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: echo "$GOOGLE_SERVICES_JSON" > vibegram/android/app/google-services.json
 
+      - name: Match the app's package name to what's registered in Firebase
+        run: |
+          python3 << 'PYEOF'
+          import json, os
+
+          with open('vibegram/android/app/google-services.json') as f:
+              gs = json.load(f)
+          package_name = gs['client'][0]['client_info']['android_client_info']['package_name']
+          print(f"Detected Firebase package name: {package_name}")
+
+          old_package = "com.example.vibegram"
+          gradle_path = 'vibegram/android/app/build.gradle.kts'
+
+          if package_name != old_package:
+              with open(gradle_path) as f:
+                  content = f.read()
+              content = content.replace(old_package, package_name)
+              with open(gradle_path, 'w') as f:
+                  f.write(content)
+
+              old_dir = f"vibegram/android/app/src/main/kotlin/{old_package.replace('.', '/')}"
+              new_dir = f"vibegram/android/app/src/main/kotlin/{package_name.replace('.', '/')}"
+              old_file = f"{old_dir}/MainActivity.kt"
+              new_file = f"{new_dir}/MainActivity.kt"
+              if os.path.exists(old_file):
+                  os.makedirs(new_dir, exist_ok=True)
+                  with open(old_file) as f:
+                      kt_content = f.read()
+                  kt_content = kt_content.replace(old_package, package_name)
+                  with open(new_file, 'w') as f:
+                      f.write(kt_content)
+                  os.remove(old_file)
+              print("Package renamed to match Firebase.")
+          else:
+              print("Already matches, nothing to do.")
+
+          print("--- build.gradle.kts ---")
+          with open(gradle_path) as f:
+              print(f.read())
+          PYEOF
+
       - name: Install dependencies
         working-directory: vibegram
         run: flutter pub get
