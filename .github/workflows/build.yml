@@ -80,6 +80,48 @@ jobs:
         working-directory: vibegram
         run: flutter pub get
 
+      - name: Force Agora's own build.gradle to compileSdk 36 (directly, so it can't be overridden)
+        run: |
+          python3 << 'PYEOF'
+          import glob, re
+
+          paths = glob.glob("/home/runner/.pub-cache/hosted/pub.dev/agora_rtc_engine-*/android/build.gradle")
+          paths += glob.glob("/home/runner/.pub-cache/hosted/pub.dev/agora_rtc_engine-*/android/build.gradle.kts")
+          print("Found agora_rtc_engine gradle files:", paths)
+
+          for path in paths:
+              with open(path) as f:
+                  content = f.read()
+              print(f"--- {path} BEFORE ---")
+              print(content)
+
+              new_content = re.sub(r'compileSdkVersion\s+\S+', 'compileSdkVersion 36', content)
+              new_content = re.sub(r'compileSdk\s*=\s*\S+', 'compileSdk = 36', new_content)
+
+              with open(path, 'w') as f:
+                  f.write(new_content)
+
+              print(f"--- {path} AFTER ---")
+              print(new_content)
+          PYEOF
+
+      - name: Locate and patch Agora plugin's own compileSdk directly
+        run: |
+          AGORA_DIR=$(find /home/runner/.pub-cache/hosted/pub.dev -maxdepth 1 -iname "agora_rtc_engine-*" -type d | head -1)
+          echo "Agora package found at: $AGORA_DIR"
+          for f in "$AGORA_DIR/android/build.gradle" "$AGORA_DIR/android/build.gradle.kts"; do
+            if [ -f "$f" ]; then
+              echo "=== $f (BEFORE) ==="
+              cat "$f"
+              sed -i -E \
+                -e 's/compileSdkVersion[[:space:]]+[a-zA-Z0-9_.]+/compileSdkVersion 36/g' \
+                -e 's/compileSdk[[:space:]]*=[[:space:]]*[a-zA-Z0-9_.]+/compileSdk = 36/g' \
+                "$f"
+              echo "=== $f (AFTER) ==="
+              cat "$f"
+            fi
+          done
+
       - name: Build debug APK
         working-directory: vibegram
         run: |
