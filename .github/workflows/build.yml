@@ -50,28 +50,6 @@ jobs:
           }
           GRADLE_EOF
 
-      - name: Fix compileSdk for ALL modules (Agora's own plugin module included)
-        run: |
-          cat >> vibegram/android/build.gradle.kts << 'GRADLE_EOF'
-
-          subprojects {
-              plugins.withId("com.android.application") {
-                  extensions.configure<com.android.build.gradle.BaseExtension> {
-                      compileSdkVersion(34)
-                  }
-              }
-              plugins.withId("com.android.library") {
-                  extensions.configure<com.android.build.gradle.BaseExtension> {
-                      compileSdkVersion(34)
-                  }
-              }
-          }
-          GRADLE_EOF
-          echo "--- android/build.gradle.kts (root) after patch ---"
-          cat vibegram/android/build.gradle.kts
-          echo "--- android/app/build.gradle.kts after patch ---"
-          cat vibegram/android/app/build.gradle.kts
-
       - name: Add calling permissions to AndroidManifest
         run: |
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>\n    <uses-permission android:name="android.permission.BLUETOOTH"/>\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>\n</manifest>|' vibegram/android/app/src/main/AndroidManifest.xml
@@ -131,11 +109,15 @@ jobs:
         working-directory: vibegram
         run: flutter pub get
 
-      - name: Set compileSdkVersion via rootProject.extra (Agora's own build.gradle reads this)
+      - name: Directly set Agora's own compileSdkVersion (exact string match, no indirection)
         run: |
-          echo 'rootProject.extra["compileSdkVersion"] = 34' >> vibegram/android/build.gradle.kts
-          echo "--- android/build.gradle.kts (final) ---"
-          cat vibegram/android/build.gradle.kts
+          AGORA_FILE=$(find /home/runner/.pub-cache/hosted/pub.dev -maxdepth 1 -iname "agora_rtc_engine-*" -type d | head -1)/android/build.gradle
+          echo "Patching: $AGORA_FILE"
+          echo "--- BEFORE ---"
+          grep -n "compileSdkVersion" "$AGORA_FILE"
+          sed -i "s/compileSdkVersion safeExtGet('compileSdkVersion', 31)/compileSdkVersion 34/" "$AGORA_FILE"
+          echo "--- AFTER ---"
+          grep -n "compileSdkVersion" "$AGORA_FILE"
 
       - name: Build debug APK
         working-directory: vibegram
