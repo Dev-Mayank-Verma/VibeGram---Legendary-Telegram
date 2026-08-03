@@ -31,12 +31,18 @@ jobs:
         working-directory: vibegram
         run: flutter create --platforms=android .
 
+      - name: Pin Android Gradle Plugin to a version compatible with Agora's SDK
+        run: |
+          sed -i -E 's/id\("com\.android\.application"\) version "[0-9.]+" apply false/id("com.android.application") version "8.7.0" apply false/' vibegram/android/settings.gradle.kts
+          echo "--- settings.gradle.kts after patch ---"
+          cat vibegram/android/settings.gradle.kts
+
       - name: Fix compileSdk for Agora/Firebase compatibility (app module)
         run: |
           cat >> vibegram/android/app/build.gradle.kts << 'GRADLE_EOF'
 
           android {
-              compileSdk = 36
+              compileSdk = 34
           }
 
           configurations.all {
@@ -51,12 +57,12 @@ jobs:
           subprojects {
               plugins.withId("com.android.application") {
                   extensions.configure<com.android.build.gradle.BaseExtension> {
-                      compileSdkVersion(36)
+                      compileSdkVersion(34)
                   }
               }
               plugins.withId("com.android.library") {
                   extensions.configure<com.android.build.gradle.BaseExtension> {
-                      compileSdkVersion(36)
+                      compileSdkVersion(34)
                   }
               }
           }
@@ -127,7 +133,7 @@ jobs:
 
       - name: Set compileSdkVersion via rootProject.extra (Agora's own build.gradle reads this)
         run: |
-          echo 'rootProject.extra["compileSdkVersion"] = 36' >> vibegram/android/build.gradle.kts
+          echo 'rootProject.extra["compileSdkVersion"] = 34' >> vibegram/android/build.gradle.kts
           echo "--- android/build.gradle.kts (final) ---"
           cat vibegram/android/build.gradle.kts
 
