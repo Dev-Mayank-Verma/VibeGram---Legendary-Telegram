@@ -20,10 +20,11 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1
+            - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.FIREasons/auth... }} # bas @v1 ki jagah @v2 kar dein
+
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
