@@ -25,6 +25,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
@@ -32,11 +35,13 @@ jobs:
         working-directory: vibegram/functions
         run: npm install
 
-      - name: Set Agora secrets in Cloud Functions
+      - name: Create .env.local with secrets
         working-directory: vibegram/functions
         run: |
-          printf '%s' "${{ secrets.AGORA_APP_ID }}" | firebase functions:secrets:set AGORA_APP_ID --project="${{ secrets.FIREBASE_PROJECT_ID }}" --data-file=- --force
-          printf '%s' "${{ secrets.AGORA_APP_CERTIFICATE }}" | firebase functions:secrets:set AGORA_APP_CERTIFICATE --project="${{ secrets.FIREBASE_PROJECT_ID }}" --data-file=- --force
+          cat > .env.local << EOF
+          AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
+          AGORA_APP_CERTIFICATE=${{ secrets.AGORA_APP_CERTIFICATE }}
+          EOF
 
       - name: Deploy Cloud Function
         working-directory: vibegram/functions
