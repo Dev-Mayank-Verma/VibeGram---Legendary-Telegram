@@ -15,6 +15,35 @@ jobs:
       - name: Unzip project
         run: unzip -o vibegram_phase1.zip
 
+      - name: Create firebase.json
+        run: |
+          cat > firebase.json << 'EOF'
+          {
+            "functions": [
+              {
+                "source": "vibegram/functions",
+                "codebase": "default",
+                "ignore": [
+                  "node_modules",
+                  ".git",
+                  "firebase-debug.log",
+                  "**/node_modules/**"
+                ]
+              }
+            ]
+          }
+          EOF
+
+      - name: Create .firebaserc
+        run: |
+          cat > .firebaserc << 'EOF'
+          {
+            "projects": {
+              "default": "vibegram-54423"
+            }
+          }
+          EOF
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,14 +64,11 @@ jobs:
         working-directory: vibegram/functions
         run: npm install
 
-      - name: Create .env.local with secrets
+      - name: Set Agora secrets in Cloud Functions
         working-directory: vibegram/functions
         run: |
-          cat > .env.local << EOF
-          AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
-          AGORA_APP_CERTIFICATE=${{ secrets.AGORA_APP_CERTIFICATE }}
-          EOF
+          printf '%s' "${{ secrets.AGORA_APP_ID }}" | firebase functions:secrets:set AGORA_APP_ID --project="${{ secrets.FIREBASE_PROJECT_ID }}" --data-file=- --force
+          printf '%s' "${{ secrets.AGORA_APP_CERTIFICATE }}" | firebase functions:secrets:set AGORA_APP_CERTIFICATE --project="${{ secrets.FIREBASE_PROJECT_ID }}" --data-file=- --force
 
       - name: Deploy Cloud Function
-        working-directory: vibegram/functions
         run: firebase deploy --only functions --project="${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
