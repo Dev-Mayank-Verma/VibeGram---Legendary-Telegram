@@ -1,4 +1,4 @@
-Name: Deploy Agora Token Server
+name: Deploy Agora Token Server
 
 on:
   push:
